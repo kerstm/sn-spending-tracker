@@ -35,14 +35,14 @@ function parseMarkdown(text) {
   if (!text) return { daily: [], recurring: [] };
 
   const sections = text.split(/^---$/m);
-  let dailyLines = [];
   let recurringLines = [];
+  let dailyLines = [];
 
   if (sections.length >= 2) {
-    dailyLines = sections[0].split('\n');
-    recurringLines = sections.slice(1).join('---').split('\n');
+    recurringLines = sections[0].split('\n');
+    dailyLines = sections.slice(1).join('---').split('\n');
   } else {
-    dailyLines = text.split('\n');
+    recurringLines = text.split('\n');
   }
 
   return {
@@ -57,18 +57,7 @@ function pad(str, len) {
 }
 
 function serializeMarkdown(daily, recurring) {
-  let md = '# Spending\n\n## Daily Expenses\n\n';
-
-  const dCatW = Math.max(8, ...daily.map(r => r.category.length));
-  const dCostW = Math.max(10, ...daily.map(r => String(r.cost).length));
-
-  md += `| ${pad('Date', 10)} | ${pad('Category', dCatW)} | ${pad('Cost (lei)', dCostW)} |\n`;
-  md += `| ${'-'.repeat(10)} | ${'-'.repeat(dCatW)} | ${'-'.repeat(dCostW)} |\n`;
-  for (const r of daily) {
-    md += `| ${pad(r.date, 10)} | ${pad(r.category, dCatW)} | ${pad(String(r.cost), dCostW)} |\n`;
-  }
-
-  md += '\n---\n\n## Yearly Recurring Expenses\n\n';
+  let md = '# Spending\n\n## Yearly Recurring Expenses\n\n';
 
   const rCatW = Math.max(8, ...recurring.map(r => r.category.length));
   const rItemW = Math.max(4, ...recurring.map(r => r.item.length));
@@ -80,6 +69,17 @@ function serializeMarkdown(daily, recurring) {
   md += `| ${'-'.repeat(rCatW)} | ${'-'.repeat(rItemW)} | ${'-'.repeat(rDueW)} | ${'-'.repeat(rAmtW)} | ${'-'.repeat(rPaidW)} |\n`;
   for (const r of recurring) {
     md += `| ${pad(r.category, rCatW)} | ${pad(r.item, rItemW)} | ${pad(r.due, rDueW)} | ${pad(r.amount, rAmtW)} | ${pad(r.paid || '-', rPaidW)} |\n`;
+  }
+
+  md += '\n---\n\n## Daily Expenses\n\n';
+
+  const dCatW = Math.max(8, ...daily.map(r => r.category.length));
+  const dCostW = Math.max(10, ...daily.map(r => String(r.cost).length));
+
+  md += `| ${pad('Date', 10)} | ${pad('Category', dCatW)} | ${pad('Cost (lei)', dCostW)} |\n`;
+  md += `| ${'-'.repeat(10)} | ${'-'.repeat(dCatW)} | ${'-'.repeat(dCostW)} |\n`;
+  for (const r of daily) {
+    md += `| ${pad(r.date, 10)} | ${pad(r.category, dCatW)} | ${pad(String(r.cost), dCostW)} |\n`;
   }
 
   return md;
@@ -207,7 +207,7 @@ function setupEvents() {
 
     if (!category || !item || !due || !amount) return;
 
-    recurring.push({ category, item, due, amount, paid: '' });
+    recurring.unshift({ category, item, due, amount, paid: '' });
     recForm.style.display = 'none';
     document.getElementById('recurring-category').value = '';
     document.getElementById('recurring-item').value = '';
@@ -269,21 +269,21 @@ function initDemo() {
   // Load from the existing consolidated format for demo/testing
   const demoText = `# Spending
 
-## Daily Expenses
-
-| Date       | Category  | Cost (lei) |
-| ---------- | --------- | ---------- |
-| 2025-01-02 | GROCERIES | 150        |
-| 2025-01-01 | COFFEE    | 25         |
-
----
-
 ## Yearly Recurring Expenses
 
 | Category | Item      | Due        | Amount   | Paid |
 | -------- | --------- | ---------- | -------- | ---- |
 | HOME     | INSURANCE | 2025-06-01 | 500 lei  | -    |
 | CAR      | TAX       | 2025-03-15 | 200 lei  | -    |
+
+---
+
+## Daily Expenses
+
+| Date       | Category  | Cost (lei) |
+| ---------- | --------- | ---------- |
+| 2025-01-02 | GROCERIES | 150        |
+| 2025-01-01 | COFFEE    | 25         |
 `;
 
   const data = parseMarkdown(demoText);
