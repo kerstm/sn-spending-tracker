@@ -217,6 +217,18 @@ hr {
   margin: 24px 0;
 }
 
+@media (prefers-color-scheme: dark) {
+  body {
+    --sn-stylekit-background-color: #1a1a1a;
+    --sn-stylekit-foreground-color: #e0e0e0;
+    --sn-stylekit-contrast-background-color: #2a2a2a;
+    --sn-stylekit-border-color: #444;
+    --sn-stylekit-neutral-color: #999;
+    background: var(--sn-stylekit-background-color);
+    color: var(--sn-stylekit-foreground-color);
+  }
+}
+
 @media (max-width: 500px) {
   body { padding: 8px; }
   table { font-size: 12px; }
