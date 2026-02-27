@@ -125,7 +125,7 @@ function daysUntil(dateStr) {
 }
 
 function statusBadge(days, paid) {
-  const base = 'display:inline-block !important;padding:2px 8px !important;border-radius:4px !important;font-size:11px !important;font-weight:600 !important;white-space:nowrap !important;';
+  const base = 'display:inline-block !important;padding:2px 8px !important;border-radius:4px !important;font-size:11px !important;font-weight:600 !important;white-space:nowrap !important;min-width:70px !important;text-align:center !important;';
   if (paid) return `<span style="${base}background:#28a745 !important;color:#fff !important;">Paid</span>`;
   if (days < 0) return `<span style="${base}background:#dc3545 !important;color:#fff !important;">Overdue ${Math.abs(days)}d</span>`;
   if (days <= 30) return `<span style="${base}background:#ffa500 !important;color:#fff !important;">${days}d left</span>`;
