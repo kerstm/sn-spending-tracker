@@ -1,0 +1,16 @@
+{
+  "name": "sn-spending-tracker",
+  "version": "1.0.0",
+  "description": "Spending tracker editor for Standard Notes",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "sn-extension-api": "^0.4.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

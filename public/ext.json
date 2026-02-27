@@ -1,0 +1,11 @@
+{
+  "identifier": "dev.kerstman.spending-tracker",
+  "name": "Spending Tracker",
+  "content_type": "SN|Component",
+  "area": "editor-editor",
+  "version": "1.0.0",
+  "description": "Track daily expenses and yearly recurring costs with an interactive table editor.",
+  "url": "{{PLUGIN_URL}}",
+  "download_url": "{{DOWNLOAD_URL}}",
+  "latest_url": "{{LATEST_URL}}"
+}

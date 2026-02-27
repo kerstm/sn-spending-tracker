@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spending Tracker</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <button id="add-expense-btn" class="btn btn-primary">+ Add Expense</button>
+      <button id="add-recurring-btn" class="btn btn-secondary">+ Add Recurring</button>
+    </div>
+
+    <div id="add-expense-form" class="form-panel" style="display:none">
+      <h3>Add Expense</h3>
+      <div class="form-row">
+        <label>Date</label>
+        <input type="date" id="expense-date">
+      </div>
+      <div class="form-row">
+        <label>Category</label>
+        <div class="category-row">
+          <select id="expense-category"></select>
+          <input type="text" id="new-category" placeholder="New category...">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Cost (lei)</label>
+        <input type="number" id="expense-cost" min="1" placeholder="100">
+      </div>
+      <div class="form-actions">
+        <button id="save-expense" class="btn btn-primary">Save</button>
+        <button id="cancel-expense" class="btn btn-ghost">Cancel</button>
+      </div>
+    </div>
+
+    <div id="add-recurring-form" class="form-panel" style="display:none">
+      <h3>Add Recurring Expense</h3>
+      <div class="form-row">
+        <label>Category</label>
+        <input type="text" id="recurring-category" placeholder="MASINA">
+      </div>
+      <div class="form-row">
+        <label>Item</label>
+        <input type="text" id="recurring-item" placeholder="RCA">
+      </div>
+      <div class="form-row">
+        <label>Due date</label>
+        <input type="date" id="recurring-due">
+      </div>
+      <div class="form-row">
+        <label>Amount</label>
+        <input type="text" id="recurring-amount" placeholder="1690 lei">
+      </div>
+      <div class="form-actions">
+        <button id="save-recurring" class="btn btn-secondary">Save</button>
+        <button id="cancel-recurring" class="btn btn-ghost">Cancel</button>
+      </div>
+    </div>
+
+    <div id="daily-section">
+      <h2>Daily Expenses</h2>
+      <table id="daily-table">
+        <thead>
+          <tr><th>Date</th><th>Category</th><th>Cost (lei)</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <hr>
+
+    <div id="recurring-section">
+      <h2>Yearly Recurring Expenses</h2>
+      <table id="recurring-table">
+        <thead>
+          <tr><th>Category</th><th>Item</th><th>Due</th><th>Amount</th><th>Paid</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
