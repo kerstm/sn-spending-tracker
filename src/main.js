@@ -91,6 +91,8 @@ function serializeMarkdown(daily, recurring) {
 let daily = [];
 let recurring = [];
 let editorKit = null;
+let editingDailyIndex = null;
+let editingRecurringIndex = null;
 
 // --- Rendering ---
 
@@ -112,7 +114,7 @@ function renderDaily() {
       <td>${r.date}</td>
       <td>${r.category}</td>
       <td class="cost-cell">${r.cost.toLocaleString()}</td>
-      <td><button class="btn btn-small btn-danger" data-action="delete-daily" data-index="${i}">x</button></td>
+      <td><button class="btn btn-small btn-edit" data-action="edit-daily" data-index="${i}">edit</button> <button class="btn btn-small btn-danger" data-action="delete-daily" data-index="${i}">x</button></td>
     </tr>
   `).join('');
 }
@@ -147,6 +149,7 @@ function renderRecurring() {
       <td>${r.amount}</td>
       <td class="${r.paid ? 'paid-yes' : 'paid-no'}">${r.paid || '-'}</td>
       <td>
+        <button class="btn btn-small btn-edit" data-action="edit-recurring" data-index="${i}">edit</button>
         ${!r.paid ? `<button class="btn btn-small btn-mark" data-action="mark-paid" data-index="${i}">paid</button>` : `<button class="btn btn-small btn-ghost" data-action="mark-unpaid" data-index="${i}">undo</button>`}
         <button class="btn btn-small btn-danger" data-action="delete-recurring" data-index="${i}">x</button>
       </td>
@@ -185,22 +188,36 @@ function setupEvents() {
   const recForm = document.getElementById('add-recurring-form');
 
   addExpBtn.addEventListener('click', () => {
+    editingDailyIndex = null;
+    document.getElementById('save-expense').textContent = 'Save';
     expForm.style.display = expForm.style.display === 'none' ? 'block' : 'none';
     recForm.style.display = 'none';
     document.getElementById('expense-date').value = todayStr();
+    document.getElementById('new-category').value = '';
+    document.getElementById('expense-cost').value = '';
     renderCategoryOptions();
   });
 
   addRecBtn.addEventListener('click', () => {
+    editingRecurringIndex = null;
+    document.getElementById('save-recurring').textContent = 'Save';
     recForm.style.display = recForm.style.display === 'none' ? 'block' : 'none';
     expForm.style.display = 'none';
+    document.getElementById('recurring-category').value = '';
+    document.getElementById('recurring-item').value = '';
+    document.getElementById('recurring-due').value = '';
+    document.getElementById('recurring-amount').value = '';
   });
 
   document.getElementById('cancel-expense').addEventListener('click', () => {
+    editingDailyIndex = null;
+    document.getElementById('save-expense').textContent = 'Save';
     expForm.style.display = 'none';
   });
 
   document.getElementById('cancel-recurring').addEventListener('click', () => {
+    editingRecurringIndex = null;
+    document.getElementById('save-recurring').textContent = 'Save';
     recForm.style.display = 'none';
   });
 
@@ -212,7 +229,13 @@ function setupEvents() {
 
     if (!date || !category || !cost) return;
 
-    daily.unshift({ date, category: category.toUpperCase(), cost });
+    if (editingDailyIndex !== null) {
+      daily[editingDailyIndex] = { date, category: category.toUpperCase(), cost };
+      editingDailyIndex = null;
+      document.getElementById('save-expense').textContent = 'Save';
+    } else {
+      daily.unshift({ date, category: category.toUpperCase(), cost });
+    }
     document.getElementById('new-category').value = '';
     document.getElementById('expense-cost').value = '';
     expForm.style.display = 'none';
@@ -228,7 +251,14 @@ function setupEvents() {
 
     if (!category || !item || !due || !amount) return;
 
-    recurring.unshift({ category, item, due, amount, paid: '' });
+    if (editingRecurringIndex !== null) {
+      const existingPaid = recurring[editingRecurringIndex].paid;
+      recurring[editingRecurringIndex] = { category, item, due, amount, paid: existingPaid };
+      editingRecurringIndex = null;
+      document.getElementById('save-recurring').textContent = 'Save';
+    } else {
+      recurring.unshift({ category, item, due, amount, paid: '' });
+    }
     recForm.style.display = 'none';
     document.getElementById('recurring-category').value = '';
     document.getElementById('recurring-item').value = '';
@@ -244,7 +274,17 @@ function setupEvents() {
     if (!btn) return;
     const idx = parseInt(btn.dataset.index);
 
-    if (btn.dataset.action === 'delete-daily') {
+    if (btn.dataset.action === 'edit-daily') {
+      editingDailyIndex = idx;
+      document.getElementById('expense-date').value = daily[idx].date;
+      renderCategoryOptions();
+      document.getElementById('expense-category').value = daily[idx].category;
+      document.getElementById('new-category').value = '';
+      document.getElementById('expense-cost').value = daily[idx].cost;
+      document.getElementById('save-expense').textContent = 'Update';
+      expForm.style.display = 'block';
+      recForm.style.display = 'none';
+    } else if (btn.dataset.action === 'delete-daily') {
       daily.splice(idx, 1);
       render();
       save();
@@ -256,7 +296,16 @@ function setupEvents() {
     if (!btn) return;
     const idx = parseInt(btn.dataset.index);
 
-    if (btn.dataset.action === 'delete-recurring') {
+    if (btn.dataset.action === 'edit-recurring') {
+      editingRecurringIndex = idx;
+      document.getElementById('recurring-category').value = recurring[idx].category;
+      document.getElementById('recurring-item').value = recurring[idx].item;
+      document.getElementById('recurring-due').value = recurring[idx].due;
+      document.getElementById('recurring-amount').value = recurring[idx].amount;
+      document.getElementById('save-recurring').textContent = 'Update';
+      recForm.style.display = 'block';
+      expForm.style.display = 'none';
+    } else if (btn.dataset.action === 'delete-recurring') {
       recurring.splice(idx, 1);
       render();
       save();
