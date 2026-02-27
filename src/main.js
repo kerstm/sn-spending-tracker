@@ -125,12 +125,12 @@ function daysUntil(dateStr) {
 }
 
 function statusBadge(days, paid) {
-  const base = 'display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;';
-  if (paid) return `<span style="${base}background:#28a745;color:#fff;">Paid</span>`;
-  if (days < 0) return `<span style="${base}background:#dc3545;color:#fff;">Overdue ${Math.abs(days)}d</span>`;
-  if (days <= 30) return `<span style="${base}background:#ffa500;color:#fff;">${days}d left</span>`;
-  if (days <= 90) return `<span style="${base}background:#17a2b8;color:#fff;">${days}d left</span>`;
-  return `<span style="${base}color:#888;">${days}d left</span>`;
+  const base = 'display:inline-block !important;padding:2px 8px !important;border-radius:4px !important;font-size:11px !important;font-weight:600 !important;white-space:nowrap !important;';
+  if (paid) return `<span style="${base}background:#28a745 !important;color:#fff !important;">Paid</span>`;
+  if (days < 0) return `<span style="${base}background:#dc3545 !important;color:#fff !important;">Overdue ${Math.abs(days)}d</span>`;
+  if (days <= 30) return `<span style="${base}background:#ffa500 !important;color:#fff !important;">${days}d left</span>`;
+  if (days <= 90) return `<span style="${base}background:#17a2b8 !important;color:#fff !important;">${days}d left</span>`;
+  return `<span style="${base}color:#888 !important;">${days}d left</span>`;
 }
 
 function renderRecurring() {
