@@ -116,13 +116,32 @@ function renderDaily() {
   `).join('');
 }
 
+function daysUntil(dateStr) {
+  const due = new Date(dateStr + 'T00:00:00');
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+}
+
+function statusBadge(days, paid) {
+  if (paid) return '<span class="badge badge-paid">Paid</span>';
+  if (days < 0) return `<span class="badge badge-overdue">Overdue ${Math.abs(days)}d</span>`;
+  if (days <= 30) return `<span class="badge badge-urgent">${days}d left</span>`;
+  if (days <= 90) return `<span class="badge badge-soon">${days}d left</span>`;
+  return `<span class="badge badge-ok">${days}d left</span>`;
+}
+
 function renderRecurring() {
   const tbody = document.querySelector('#recurring-table tbody');
-  tbody.innerHTML = recurring.map((r, i) => `
-    <tr>
+  tbody.innerHTML = recurring.map((r, i) => {
+    const days = daysUntil(r.due);
+    const rowClass = !r.paid && days < 0 ? 'row-overdue' : !r.paid && days <= 30 ? 'row-urgent' : '';
+    return `
+    <tr class="${rowClass}">
       <td>${r.category}</td>
       <td>${r.item}</td>
       <td>${r.due}</td>
+      <td>${statusBadge(days, r.paid)}</td>
       <td>${r.amount}</td>
       <td class="${r.paid ? 'paid-yes' : 'paid-no'}">${r.paid || '-'}</td>
       <td>
@@ -130,7 +149,7 @@ function renderRecurring() {
         <button class="btn btn-small btn-danger" data-action="delete-recurring" data-index="${i}">x</button>
       </td>
     </tr>
-  `).join('');
+  `;}).join('');
 }
 
 function render() {
