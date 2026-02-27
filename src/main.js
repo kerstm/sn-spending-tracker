@@ -157,9 +157,30 @@ function renderRecurring() {
   `;}).join('');
 }
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderMonthlyStats() {
+  const stats = {};
+  for (const r of daily) {
+    const key = r.date.slice(0, 7); // "YYYY-MM"
+    stats[key] = (stats[key] || 0) + r.cost;
+  }
+  const sorted = Object.entries(stats).sort((a, b) => a[0].localeCompare(b[0]));
+  const el = document.getElementById('monthly-stats');
+  if (sorted.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="monthly-stats">' +
+    sorted.map(([month, total]) => {
+      const m = MONTHS[parseInt(month.slice(5)) - 1];
+      const y = month.slice(0, 4);
+      return `<span class="month-pill">${m} ${y}: <strong>${total.toLocaleString()} lei</strong></span>`;
+    }).join('') +
+    '</div>';
+}
+
 function render() {
   renderDaily();
   renderRecurring();
+  renderMonthlyStats();
   renderCategoryOptions();
 }
 
