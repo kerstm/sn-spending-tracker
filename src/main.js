@@ -130,7 +130,7 @@ function statusBadge(days, paid) {
   if (days < 0) return `<span style="${base}background:#dc3545 !important;color:#fff !important;">Overdue ${Math.abs(days)}d</span>`;
   if (days <= 30) return `<span style="${base}background:#ffa500 !important;color:#fff !important;">${days}d left</span>`;
   if (days <= 90) return `<span style="${base}background:#17a2b8 !important;color:#fff !important;">${days}d left</span>`;
-  return `<span style="${base}color:#888 !important;">${days}d left</span>`;
+  return `<span style="${base}background:rgba(136,136,136,0.15) !important;color:#888 !important;">${days}d left</span>`;
 }
 
 function renderRecurring() {
