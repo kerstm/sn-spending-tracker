@@ -34,15 +34,16 @@ function parseRecurring(lines) {
 function parseMarkdown(text) {
   if (!text) return { daily: [], recurring: [] };
 
-  const sections = text.split(/^---$/m);
-  let recurringLines = [];
+  const lines = text.split('\n');
   let dailyLines = [];
+  let recurringLines = [];
+  let target = null;
 
-  if (sections.length >= 2) {
-    recurringLines = sections[0].split('\n');
-    dailyLines = sections.slice(1).join('---').split('\n');
-  } else {
-    recurringLines = text.split('\n');
+  for (const line of lines) {
+    if (/daily expenses/i.test(line)) { target = 'daily'; continue; }
+    if (/recurring expenses/i.test(line)) { target = 'recurring'; continue; }
+    if (target === 'daily') dailyLines.push(line);
+    if (target === 'recurring') recurringLines.push(line);
   }
 
   return {
