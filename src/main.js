@@ -15,17 +15,41 @@ function parseDaily(lines) {
 }
 
 function parseRecurring(lines) {
+  // Detect header order to support both legacy and new column layouts.
+  // Legacy: Category | Item | Due       | Amount   | Paid
+  // New:    Category | Item | Last Paid | Next Due | Amount
+  let layout = 'new';
+  for (const line of lines) {
+    const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+    if (cells.length >= 5 && /^category$/i.test(cells[0])) {
+      if (/^due$/i.test(cells[2]) && /^paid$/i.test(cells[4])) layout = 'legacy';
+      else layout = 'new';
+      break;
+    }
+  }
+
   const rows = [];
   for (const line of lines) {
     const cells = line.split('|').map(c => c.trim()).filter(Boolean);
-    if (cells.length >= 5 && !cells[0].startsWith('--') && !cells[0].startsWith('Category')) {
-      rows.push({
-        category: cells[0],
-        item: cells[1],
-        due: cells[2],
-        amount: cells[3],
-        paid: cells[4] === '-' ? '' : cells[4],
-      });
+    if (cells.length >= 5 && !cells[0].startsWith('--') && !/^category$/i.test(cells[0])) {
+      if (layout === 'legacy') {
+        // Migrate: legacy "Paid" date becomes lastPaid; "Due" becomes nextDue.
+        rows.push({
+          category: cells[0],
+          item: cells[1],
+          lastPaid: cells[4] === '-' ? '' : cells[4],
+          nextDue: cells[2],
+          amount: cells[3],
+        });
+      } else {
+        rows.push({
+          category: cells[0],
+          item: cells[1],
+          lastPaid: cells[2] === '-' ? '' : cells[2],
+          nextDue: cells[3],
+          amount: cells[4],
+        });
+      }
     }
   }
   return rows;
@@ -62,14 +86,14 @@ function serializeMarkdown(daily, recurring) {
 
   const rCatW = Math.max(8, ...recurring.map(r => r.category.length));
   const rItemW = Math.max(4, ...recurring.map(r => r.item.length));
-  const rDueW = Math.max(3, ...recurring.map(r => r.due.length));
+  const rLastW = Math.max(9, ...recurring.map(r => (r.lastPaid || '-').length));
+  const rNextW = Math.max(8, ...recurring.map(r => r.nextDue.length));
   const rAmtW = Math.max(6, ...recurring.map(r => r.amount.length));
-  const rPaidW = Math.max(4, ...recurring.map(r => (r.paid || '-').length));
 
-  md += `| ${pad('Category', rCatW)} | ${pad('Item', rItemW)} | ${pad('Due', rDueW)} | ${pad('Amount', rAmtW)} | ${pad('Paid', rPaidW)} |\n`;
-  md += `| ${'-'.repeat(rCatW)} | ${'-'.repeat(rItemW)} | ${'-'.repeat(rDueW)} | ${'-'.repeat(rAmtW)} | ${'-'.repeat(rPaidW)} |\n`;
+  md += `| ${pad('Category', rCatW)} | ${pad('Item', rItemW)} | ${pad('Last Paid', rLastW)} | ${pad('Next Due', rNextW)} | ${pad('Amount', rAmtW)} |\n`;
+  md += `| ${'-'.repeat(rCatW)} | ${'-'.repeat(rItemW)} | ${'-'.repeat(rLastW)} | ${'-'.repeat(rNextW)} | ${'-'.repeat(rAmtW)} |\n`;
   for (const r of recurring) {
-    md += `| ${pad(r.category, rCatW)} | ${pad(r.item, rItemW)} | ${pad(r.due, rDueW)} | ${pad(r.amount, rAmtW)} | ${pad(r.paid || '-', rPaidW)} |\n`;
+    md += `| ${pad(r.category, rCatW)} | ${pad(r.item, rItemW)} | ${pad(r.lastPaid || '-', rLastW)} | ${pad(r.nextDue, rNextW)} | ${pad(r.amount, rAmtW)} |\n`;
   }
 
   md += '\n---\n\n## Daily Expenses\n\n';
@@ -126,31 +150,41 @@ function daysUntil(dateStr) {
   return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
 }
 
-function statusBadge(days, paid) {
+function statusBadge(days) {
   const base = 'display:inline-block !important;padding:2px 8px !important;border-radius:4px !important;font-size:11px !important;font-weight:600 !important;white-space:nowrap !important;';
-  if (paid) return `<span style="${base}background:#28a745 !important;color:#fff !important;">Paid</span>`;
   if (days < 0) return `<span style="${base}background:#dc3545 !important;color:#fff !important;">Overdue ${Math.abs(days)}d</span>`;
+  if (days === 0) return `<span style="${base}background:#dc3545 !important;color:#fff !important;">Due today</span>`;
   if (days <= 30) return `<span style="${base}background:#ffa500 !important;color:#fff !important;">${days}d left</span>`;
   if (days <= 90) return `<span style="${base}background:#17a2b8 !important;color:#fff !important;">${days}d left</span>`;
   return `<span style="${base}background:rgba(136,136,136,0.15) !important;color:#888 !important;">${days}d left</span>`;
 }
 
+function addYears(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target = new Date(y + n, m - 1, d);
+  // Handle Feb 29 rolling into March on non-leap years.
+  if (target.getMonth() !== m - 1) {
+    return `${y + n}-${String(m).padStart(2, '0')}-${String(new Date(y + n, m, 0).getDate()).padStart(2, '0')}`;
+  }
+  return `${y + n}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 function renderRecurring() {
   const tbody = document.querySelector('#recurring-table tbody');
   tbody.innerHTML = recurring.map((r, i) => {
-    const days = daysUntil(r.due);
-    const rowClass = !r.paid && days < 0 ? 'row-overdue' : !r.paid && days <= 30 ? 'row-urgent' : '';
+    const days = daysUntil(r.nextDue);
+    const rowClass = days < 0 ? 'row-overdue' : days <= 30 ? 'row-urgent' : '';
     return `
     <tr class="${rowClass}">
       <td>${r.category}</td>
       <td>${r.item}</td>
-      <td>${r.due}</td>
-      <td>${statusBadge(days, r.paid)}</td>
+      <td class="${r.lastPaid ? 'paid-yes' : 'paid-no'}">${r.lastPaid || '-'}</td>
+      <td>${r.nextDue}</td>
+      <td>${statusBadge(days)}</td>
       <td>${r.amount}</td>
-      <td class="${r.paid ? 'paid-yes' : 'paid-no'}">${r.paid || '-'}</td>
       <td>
         <button class="btn btn-small btn-edit" data-action="edit-recurring" data-index="${i}">edit</button>
-        ${!r.paid ? `<button class="btn btn-small btn-mark" data-action="mark-paid" data-index="${i}">paid</button>` : `<button class="btn btn-small btn-ghost" data-action="mark-unpaid" data-index="${i}">undo</button>`}
+        <button class="btn btn-small btn-mark" data-action="mark-paid" data-index="${i}">paid</button>
         <button class="btn btn-small btn-danger" data-action="delete-recurring" data-index="${i}">x</button>
       </td>
     </tr>
@@ -226,7 +260,8 @@ function setupEvents() {
     expForm.style.display = 'none';
     document.getElementById('recurring-category').value = '';
     document.getElementById('recurring-item').value = '';
-    document.getElementById('recurring-due').value = '';
+    document.getElementById('recurring-last-paid').value = '';
+    document.getElementById('recurring-next-due').value = '';
     document.getElementById('recurring-amount').value = '';
   });
 
@@ -267,23 +302,24 @@ function setupEvents() {
   document.getElementById('save-recurring').addEventListener('click', () => {
     const category = document.getElementById('recurring-category').value.trim().toUpperCase();
     const item = document.getElementById('recurring-item').value.trim().toUpperCase();
-    const due = document.getElementById('recurring-due').value;
+    const lastPaid = document.getElementById('recurring-last-paid').value;
+    const nextDue = document.getElementById('recurring-next-due').value;
     const amount = document.getElementById('recurring-amount').value.trim();
 
-    if (!category || !item || !due || !amount) return;
+    if (!category || !item || !nextDue || !amount) return;
 
     if (editingRecurringIndex !== null) {
-      const existingPaid = recurring[editingRecurringIndex].paid;
-      recurring[editingRecurringIndex] = { category, item, due, amount, paid: existingPaid };
+      recurring[editingRecurringIndex] = { category, item, lastPaid, nextDue, amount };
       editingRecurringIndex = null;
       document.getElementById('save-recurring').textContent = 'Save';
     } else {
-      recurring.unshift({ category, item, due, amount, paid: '' });
+      recurring.unshift({ category, item, lastPaid, nextDue, amount });
     }
     recForm.style.display = 'none';
     document.getElementById('recurring-category').value = '';
     document.getElementById('recurring-item').value = '';
-    document.getElementById('recurring-due').value = '';
+    document.getElementById('recurring-last-paid').value = '';
+    document.getElementById('recurring-next-due').value = '';
     document.getElementById('recurring-amount').value = '';
     render();
     save();
@@ -321,7 +357,8 @@ function setupEvents() {
       editingRecurringIndex = idx;
       document.getElementById('recurring-category').value = recurring[idx].category;
       document.getElementById('recurring-item').value = recurring[idx].item;
-      document.getElementById('recurring-due').value = recurring[idx].due;
+      document.getElementById('recurring-last-paid').value = recurring[idx].lastPaid || '';
+      document.getElementById('recurring-next-due').value = recurring[idx].nextDue;
       document.getElementById('recurring-amount').value = recurring[idx].amount;
       document.getElementById('save-recurring').textContent = 'Update';
       recForm.style.display = 'block';
@@ -331,11 +368,8 @@ function setupEvents() {
       render();
       save();
     } else if (btn.dataset.action === 'mark-paid') {
-      recurring[idx].paid = todayStr();
-      render();
-      save();
-    } else if (btn.dataset.action === 'mark-unpaid') {
-      recurring[idx].paid = '';
+      recurring[idx].lastPaid = todayStr();
+      recurring[idx].nextDue = addYears(recurring[idx].nextDue, 1);
       render();
       save();
     }
@@ -362,10 +396,10 @@ function initDemo() {
 
 ## Yearly Recurring Expenses
 
-| Category | Item      | Due        | Amount   | Paid |
-| -------- | --------- | ---------- | -------- | ---- |
-| HOME     | INSURANCE | 2025-06-01 | 500 lei  | -    |
-| CAR      | TAX       | 2025-03-15 | 200 lei  | -    |
+| Category | Item      | Last Paid  | Next Due   | Amount   |
+| -------- | --------- | ---------- | ---------- | -------- |
+| HOME     | INSURANCE | 2024-06-01 | 2025-06-01 | 500 lei  |
+| CAR      | TAX       | 2024-03-15 | 2025-03-15 | 200 lei  |
 
 ---
 

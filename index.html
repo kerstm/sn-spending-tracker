@@ -47,8 +47,12 @@
         <input type="text" id="recurring-item" placeholder="ITEM">
       </div>
       <div class="form-row">
-        <label>Due date</label>
-        <input type="date" id="recurring-due">
+        <label>Last paid</label>
+        <input type="date" id="recurring-last-paid">
+      </div>
+      <div class="form-row">
+        <label>Next due</label>
+        <input type="date" id="recurring-next-due">
       </div>
       <div class="form-row">
         <label>Amount</label>
@@ -64,7 +68,7 @@
       <h2>Yearly Recurring Expenses</h2>
       <table id="recurring-table">
         <thead>
-          <tr><th>Category</th><th>Item</th><th>Due</th><th>Status</th><th>Amount</th><th>Paid</th><th></th></tr>
+          <tr><th>Category</th><th>Item</th><th>Last Paid</th><th>Next Due</th><th>Status</th><th>Amount</th><th></th></tr>
         </thead>
         <tbody></tbody>
       </table>
